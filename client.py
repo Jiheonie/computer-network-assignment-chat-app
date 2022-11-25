@@ -3,27 +3,40 @@ import threading
 
 HEADER = 64
 PORT = 5050
-SERVER = socket.gethostbyname(socket.gethostname())
+SERVER = '192.168.100.14'
 DISCONNECT_MSG = "!DISCONNECT"
+FORMAT = "ascii"
 
 client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 client.connect((SERVER, PORT))
 
 
-def send(msg):
-    message = msg.encode("utf-8")
-    msg_length = len(message)
-    send_length = str(msg_length).encode("utf-8")
-    send_length += b' ' * (HEADER - len(send_length))
-    client.send(send_length)
-    client.send(message)
-    print(client.recv(2048).decode("utf-8"))
-
-
 chat_still = True
-while chat_still:
-    msg = input("Say something: ")
-    send(msg)
 
-    if msg == DISCONNECT_MSG:
-        chat_still = False
+def send():
+    global chat_still
+    while chat_still:
+        msg = input()
+        if msg == DISCONNECT_MSG:
+            chat_still = False
+
+        client.send(msg.encode(FORMAT))
+
+
+def receive():
+    global chat_still
+    while chat_still:
+        msg = client.recv(HEADER).decode(FORMAT)
+        print(msg)
+    
+        
+
+receive_thread = threading.Thread(target=receive)
+receive_thread.start()
+
+send_thread = threading.Thread(target=send)
+send_thread.start()
+
+
+
+
