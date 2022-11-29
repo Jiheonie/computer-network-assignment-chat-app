@@ -102,11 +102,13 @@ recv_thread = threading.Thread(target=peer.listen)
 recv_thread.start()
 
 while True: 
+    print('Option 1: Connect to another address')
+    print('------------------------------------')
     user_option = int(input('Choose your option: '))
     # .....
     if user_option == 1:
-        user_ip = input('Enter IP address: ')
-        user_port = int(input('Enter port: '))
+        user_ip = input('Enter IP address connect to: ')
+        user_port = int(input('Enter port connect to: '))
         conn = peer.connect(user_ip, user_port)
         while conn in peer.all_nodes():
             msg = input('say sth: ')
