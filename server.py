@@ -4,7 +4,7 @@ import threading
 HEADER = 64
 PORT = 5050
 SERVER = socket.gethostbyname(socket.gethostname())
-DISCONNECT_MSG = "!DISCONNECT"
+DISCONNECT_MSG = "!disconn"
 FORMAT = "ascii"
 
 server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -20,7 +20,7 @@ def broadcast(msg):
 
 def handle_client(conn, addr):
     welcome_msg = f"[NEW CONNECTION] {addr} is connected."
-    broadcast(welcome_msg)
+    # broadcast(welcome_msg)
     print(welcome_msg)
 
     connected = True
@@ -35,7 +35,7 @@ def handle_client(conn, addr):
             else:   
                 broadcast_msg = f'[{addr}] {recv_msg}'
                 print(broadcast_msg)
-                broadcast(broadcast_msg)
+                # broadcast(broadcast_msg)
 
     conn.close()
 

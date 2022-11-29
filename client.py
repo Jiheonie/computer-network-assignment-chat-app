@@ -3,8 +3,8 @@ import threading
 
 HEADER = 64
 PORT = 5050
-SERVER = '192.168.100.14'
-DISCONNECT_MSG = "!DISCONNECT"
+SERVER = socket.gethostbyname(socket.gethostname())
+DISCONNECT_MSG = "!disconn"
 FORMAT = "ascii"
 
 client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
