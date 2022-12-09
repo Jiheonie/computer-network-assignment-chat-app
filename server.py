@@ -3,7 +3,7 @@ import threading
 
 import re
 
-HEADER = 64
+HEADER = 2048
 PORT = 5050
 SERVER = socket.gethostbyname(socket.gethostname())
 FORMAT = "ascii"
@@ -46,7 +46,7 @@ class Server:
                     self.conns.remove(conn)    
                 elif recv_msg == "!online":   
                     online_list = str(self.online_users)
-                    self.send(conn, online_list)
+                    self.send(conn, str(online_list))
 
                     
 

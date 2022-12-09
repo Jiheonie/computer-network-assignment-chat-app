@@ -3,9 +3,9 @@ import threading
 import re
 
 
-HEADER = 64
+HEADER = 2048
 PORT = 5050
-SERVER = '192.168.100.13'
+SERVER = '172.16.3.158'
 DISCONNECT_MSG = "!exit"
 FORMAT = "ascii"
 NAME_PATTERN = "\#NAME\:\s"
@@ -32,7 +32,7 @@ class Node:
         self.addrs_in = []
         self.names_in = []
 
-        self.messages = []
+        self.messages = ['abcd']
 
         self.server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.server_socket.bind((self.host, self.port))
@@ -65,17 +65,15 @@ class Node:
     def request_server(self, command):
         if command == "!online":
             self.send_by_name("server", "!online")
-            recv_msg = str(self.recv_by_name("server"))
+            # recv_msg = str(self.recv_by_name("server"))
+            recv_msg = str(self.nodes_out[0].recv(HEADER).decode(FORMAT))
+            print(recv_msg)
             print(recv_msg)
             # tach danh sach ra
             self.available_users = eval(recv_msg)  
             print(self.available_users)
             print(len(self.available_users))
-            # except SyntaxError:
-            #     return                          
-
-
-
+                        
 
     def listen(self):
         # Like server in client-server
@@ -122,16 +120,16 @@ class Node:
 
     
     def recv_node_out(self, conn):
-        while conn in self.nodes_out:
+        name = self.find_name_by_conn(conn)
+        while conn in self.nodes_out and name != "server":
             recv_msg = conn.recv(HEADER).decode(FORMAT)
             if recv_msg:
                 self.recv_msg(conn, recv_msg)
 
     
     def recv_by_name(self, name):
-        if name in self.all_names():
-            conn = self.find_conn_by_name(name)
-            return conn.recv(HEADER).decode(FORMAT)
+        conn = self.find_conn_by_name(name)
+        return conn.recv(HEADER).decode(FORMAT)
 
 
     def send_node_out(self, conn, msg):

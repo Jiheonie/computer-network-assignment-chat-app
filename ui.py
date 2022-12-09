@@ -43,6 +43,10 @@ class MainUi(customtkinter.CTk):
     def reload_handler(self):
         self.node.request_server("!online") #*************
         self.peer_list = []
+        try:
+            print(self.node.available_users)
+        except:
+            print(0)
         for name in self.node.available_users[1]: #***************
             self.peer_list.append(name)
         if self.peer_list == []:
