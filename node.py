@@ -2,12 +2,17 @@ import socket
 import threading
 import re
 
+
 HEADER = 64
 PORT = 5050
-SERVER = socket.gethostbyname(socket.gethostname())
-DISCONNECT_MSG = "!disconn"
+SERVER = '192.168.100.13'
+DISCONNECT_MSG = "!exit"
 FORMAT = "ascii"
 NAME_PATTERN = "\#NAME\:\s"
+CONNS_PATTERN = "conns\:\s"
+ADDRS_PATTERN = "addrs\:\s"
+NAMES_PATTERN = "names\:\s"
+
 
 class Node:
     def __init__(self, host, port, name) -> None:
@@ -15,6 +20,8 @@ class Node:
         self.port = port
         self.name = name
 
+        self.available_users = []
+        
         # connect
         self.nodes_out = []
         self.addrs_out = []
@@ -25,11 +32,13 @@ class Node:
         self.addrs_in = []
         self.names_in = []
 
+        self.messages = []
+
         self.server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.server_socket.bind((self.host, self.port))
         self.connect(SERVER, PORT)
 
-
+        
     def connect(self, ip_addr, port):
         # Like a client in client-server
         # initialize nodes out 
@@ -42,6 +51,30 @@ class Node:
         recv_thread = threading.Thread(target=self.recv_node_out, args=(conn,))
         recv_thread.start()
         return conn
+
+    
+    def connect_auto(self, name):
+        connected = False
+        if name in self.all_names():
+            connected = True
+        if not connected:
+            pass
+            
+
+
+    def request_server(self, command):
+        if command == "!online":
+            self.send_by_name("server", "!online")
+            recv_msg = str(self.recv_by_name("server"))
+            print(recv_msg)
+            # tach danh sach ra
+            self.available_users = eval(recv_msg)  
+            print(self.available_users)
+            print(len(self.available_users))
+            # except SyntaxError:
+            #     return                          
+
+
 
 
     def listen(self):
@@ -70,19 +103,22 @@ class Node:
         return self.names_out + self.names_in
 
 
-    def get_name(self, conn):
+    def find_name_by_conn(self, conn):
         index = self.all_nodes().index(conn)
         return self.all_names()[index]
 
+
+    def find_conn_by_name(self, name):
+        index = self.all_names().index(name)
+        return self.all_nodes()[index]
+
             
     def recv_node_in(self, conn):
-        # handle and receive message from a node in 
         while conn in self.nodes_in:
             recv_msg = conn.recv(HEADER).decode(FORMAT)
             if recv_msg:
                 self.recv_msg(conn, recv_msg)
 
-        conn.close()
 
     
     def recv_node_out(self, conn):
@@ -91,7 +127,11 @@ class Node:
             if recv_msg:
                 self.recv_msg(conn, recv_msg)
 
-        conn.close()
+    
+    def recv_by_name(self, name):
+        if name in self.all_names():
+            conn = self.find_conn_by_name(name)
+            return conn.recv(HEADER).decode(FORMAT)
 
 
     def send_node_out(self, conn, msg):
@@ -114,21 +154,34 @@ class Node:
         if conn in self.nodes_out:
             self.send_node_out(conn, msg)
 
+    
+    def send_by_name(self, name, msg):
+        if name in self.all_names():
+            conn = self.find_conn_by_name(name)
+            self.send(conn, msg)
+        else:
+            print("This name is not available")
 
-    def recv_msg(self, conn, recv_msg):
-        match = re.search(NAME_PATTERN, recv_msg)
+
+    def recv_msg(self, conn, msg):
+        match = re.search(NAME_PATTERN, msg)
         if match:
-            self.recv_name(conn, recv_msg)
-        elif recv_msg == DISCONNECT_MSG:
-            print(f'[{self.get_name(conn)}] disconnected')
-            self.nodes_out.remove(conn)  
+            self.recv_name(conn, msg)
+        elif msg == DISCONNECT_MSG:
+            self.disconnect(conn)
         else:   
-            self.display_msg(conn, recv_msg) 
+            self.display_msg(conn, msg) 
             
     
     def display_msg(self, conn, recv_msg):
-        name = self.get_name(conn)
+        name = self.find_name_by_conn(conn)
         print(f'\n[{name}] {recv_msg}') 
+        # pass
+
+
+    def disconnect(self, conn):
+        print(f'[{self.find_name_by_conn(conn)}] disconnected')
+        self.nodes_out.remove(conn)  
 
     
     def recv_name(self, conn, msg):
@@ -137,4 +190,5 @@ class Node:
             self.names_out.append(split_msg[1])
         else:
             self.names_in.append(split_msg[1])
+
 

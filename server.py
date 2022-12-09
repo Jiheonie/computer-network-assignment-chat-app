@@ -1,57 +1,75 @@
 import socket
 import threading
 
+import re
+
 HEADER = 64
 PORT = 5050
 SERVER = socket.gethostbyname(socket.gethostname())
-DISCONNECT_MSG = "!disconn"
 FORMAT = "ascii"
+NAME_PATTERN = "\#NAME\:\s"
 
-server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-server.bind((SERVER, PORT))
 
-connections = []
-accounts = []
+class Server:
+    def __init__(self) -> None:
+        self.host = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        self.host.bind((SERVER, PORT))
 
-def broadcast(msg):
-    for conn in connections:
+        self.conns = []
+        self.addrs = []
+        self.names = []
+
+        self.online_users = [self.addrs, self.names]
+
+
+    def send(self, conn, msg):
         conn.send(msg.encode(FORMAT))
 
 
-def handle_client(conn, addr):
-    welcome_msg = f"[NEW CONNECTION] {addr} is connected."
-    # broadcast(welcome_msg)
-    print(welcome_msg)
-
-    connected = True
-    while connected:
-        recv_msg = conn.recv(HEADER).decode(FORMAT)
-        if recv_msg:
-            print(recv_msg)
-            if recv_msg == DISCONNECT_MSG:
-                connected = False
-                print(f'[{addr}] DISCONNECTED')
-                connections.remove(conn)    
-            else:   
-                broadcast_msg = f'[{addr}] {recv_msg}'
-                print(broadcast_msg)
-                # broadcast(broadcast_msg)
-
-    conn.close()
+    def recv_name(self, msg):
+        split_msg = msg.split(": ")
+        self.names.append(split_msg[1])
 
 
-def start():
-    server.listen()
-    print(f"[LISTENING] Server is listening on {SERVER}")
-    while True:
-        (conn, addr) = server.accept()
-        connections.append(conn)
-        thread = threading.Thread(target=handle_client, args=(conn, addr))
-        thread.start() 
-        print(f"[ACTIVE CONNECTION] {threading.active_count() - 1}")
+    def handle_client(self, conn, addr):
+        connected = True
+        while connected:
+            recv_msg = conn.recv(HEADER).decode(FORMAT)
+            if recv_msg:
+                print(recv_msg)
+                match = re.search(NAME_PATTERN, recv_msg)
+                if match:
+                    self.recv_name(recv_msg)
+                elif recv_msg == "exit":
+                    connected = False
+                    print(f'[{addr}] DISCONNECTED')
+                    self.conns.remove(conn)    
+                elif recv_msg == "!online":   
+                    online_list = str(self.online_users)
+                    self.send(conn, online_list)
+
+                    
+
+        conn.close()
+
+
+    def show_available_users(self):
+        pass
+
+
+    def start(self, ):
+        self.host.listen()
+        print(f"[LISTENING] Server is listening on {SERVER}")
+        while True:
+            (conn, addr) = self.host.accept()
+            self.conns.append(conn)
+            self.addrs.append(addr)
+            thread = threading.Thread(target=self.handle_client, args=(conn, addr))
+            thread.start() 
+            print(f"[ACTIVE CONNECTION] {threading.active_count() - 1}")
 
 
 
-
+server = Server()
 print('[STARTING] server is starting...')
-start()
+server.start()
