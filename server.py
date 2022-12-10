@@ -8,6 +8,7 @@ PORT = 5050
 SERVER = socket.gethostbyname(socket.gethostname())
 FORMAT = "ascii"
 NAME_PATTERN = "\#NAME\:\s"
+ADDR_PATTERN = "\#ADDR\:\s"
 
 
 class Server:
@@ -31,15 +32,23 @@ class Server:
         self.names.append(split_msg[1])
 
 
+    def recv_addr(self, msg):
+        split_msg = msg.split(": ")
+        self.addrs.append((split_msg[1], int(split_msg[2])))
+
+
     def handle_client(self, conn, addr):
         connected = True
         while connected:
             recv_msg = conn.recv(HEADER).decode(FORMAT)
             if recv_msg:
                 print(recv_msg)
-                match = re.search(NAME_PATTERN, recv_msg)
-                if match:
+                match_name = re.search(NAME_PATTERN, recv_msg)
+                match_addr = re.search(ADDR_PATTERN, recv_msg)
+                if match_name:
                     self.recv_name(recv_msg)
+                elif match_addr:
+                    self.recv_addr(recv_msg)
                 elif recv_msg == "exit":
                     connected = False
                     print(f'[{addr}] DISCONNECTED')
@@ -48,13 +57,7 @@ class Server:
                     online_list = str(self.online_users)
                     self.send(conn, str(online_list))
 
-                    
-
         conn.close()
-
-
-    def show_available_users(self):
-        pass
 
 
     def start(self, ):
@@ -63,7 +66,6 @@ class Server:
         while True:
             (conn, addr) = self.host.accept()
             self.conns.append(conn)
-            self.addrs.append(addr)
             thread = threading.Thread(target=self.handle_client, args=(conn, addr))
             thread.start() 
             print(f"[ACTIVE CONNECTION] {threading.active_count() - 1}")

@@ -41,14 +41,12 @@ class MainUi(customtkinter.CTk):
 
 
     def reload_handler(self):
-        self.node.request_server("!online") #*************
+        self.node.request_server("!online")
         self.peer_list = []
-        try:
-            print(self.node.available_users)
-        except:
-            print(0)
-        for name in self.node.available_users[1]: #***************
-            self.peer_list.append(name)
+        print(self.node.available_users)
+        for name in self.node.available_users[1]:
+            if name != self.node.name:
+                self.peer_list.append(name)
         if self.peer_list == []:
             self.peer_list = ["No online user"]
         self.peer_chooser.configure(values=self.peer_list)
@@ -57,9 +55,9 @@ class MainUi(customtkinter.CTk):
     def send_handler(self):
         name = self.peer_chooser.get()
         msg = self.input_message.get()
-        self.node.connect_auto(name) # ************
+        self.node.connect_auto(name) #********
         self.node.send_by_name(name, msg)
         self.input_message.delete("0", "end")
-        sent_report = "[ To " + name + " ]    " + msg + "\n\n"
+        sent_report = f"[To {name}]  {msg}\n\n"
         self.node.messages.append(sent_report)
 
