@@ -14,5 +14,7 @@ recv_thread.start()
 app = ui.MainUi(node=peer)
 app.after(500, app.show_mesage)
 
-
 app.mainloop()
+
+peer.working = False
+peer.request_server("!exit")

@@ -9,9 +9,6 @@ SERVER = socket.gethostbyname(socket.gethostname())
 DISCONNECT_MSG = "!exit"
 FORMAT = "ascii"
 NAME_PATTERN = "\#NAME\:\s"
-CONNS_PATTERN = "conns\:\s"
-ADDRS_PATTERN = "addrs\:\s"
-NAMES_PATTERN = "names\:\s"
 
 
 class Node:
@@ -33,6 +30,9 @@ class Node:
         self.names_in = []
 
         self.messages = []
+
+        self.working = True
+        self.lock = threading.Lock()
 
         self.server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.server_socket.bind((self.host, self.port))
@@ -69,6 +69,7 @@ class Node:
             ip = addr[0]
             port = addr[1]
             self.connect(ip, port)
+
             print(f"OK: {self.all_names()}")
             
 
@@ -78,13 +79,15 @@ class Node:
             recv_msg = str(self.nodes_out[0].recv(HEADER).decode(FORMAT))
             # tach danh sach ra
             self.available_users = eval(recv_msg)  
+        elif command == "!exit":
+            self.send_by_name("server", "!exit")
                         
 
     def listen(self):
         # Like server in client-server
         # receive connection from node in
         self.server_socket.listen()
-        while True:
+        while self.working:
             (conn, addr) = self.server_socket.accept()
             self.nodes_in.append(conn)
             self.addrs_in.append(addr)
@@ -92,6 +95,7 @@ class Node:
             self.send_node_in(conn, name_msg)
             recv_thread = threading.Thread(target=self.recv_node_in, args=(conn,))
             recv_thread.start()
+            recv_thread.join()
 
 
     def all_nodes(self):
@@ -125,15 +129,19 @@ class Node:
 
 
     def recv_node_out(self, conn):
+        self.lock.acquire()
         try: 
             name = self.find_name_by_conn(conn)
         except IndexError:
             name = ""
         while conn in self.nodes_out and name != "server":
+            
             recv_msg = conn.recv(HEADER).decode(FORMAT)
             print(recv_msg)
             if recv_msg:
                 self.recv_msg(conn, recv_msg)
+
+        self.lock.release()
 
     
     def recv_by_name(self, name):
@@ -144,7 +152,7 @@ class Node:
     def send_node_out(self, conn, msg):
         if msg == DISCONNECT_MSG:
             self.nodes_out.remove(conn)
-
+        print('hihi')
         conn.send(msg.encode(FORMAT))
 
 

@@ -49,10 +49,14 @@ class Server:
                     self.recv_name(recv_msg)
                 elif match_addr:
                     self.recv_addr(recv_msg)
-                elif recv_msg == "exit":
+                elif recv_msg == "!exit":
                     connected = False
                     print(f'[{addr}] DISCONNECTED')
-                    self.conns.remove(conn)    
+                    self.conns.remove(conn)  
+                    index = self.conns.index(conn)  
+                    self.addrs.pop(index)
+                    self.names.pop(index)
+                    self.online_users = [self.addrs, self.names]
                 elif recv_msg == "!online":   
                     online_list = str(self.online_users)
                     self.send(conn, str(online_list))
