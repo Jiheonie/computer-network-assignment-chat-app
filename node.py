@@ -174,8 +174,14 @@ class Node:
         if name in self.all_names():
             conn = self.find_conn_by_name(name)
             self.send(conn, msg)
-        else:
-            print("This name is not available")
+            for msg in self.messages:
+                if msg == f"Not connected to {name}\n\n":
+                    self.messages.remove(msg)
+            return True
+
+        print("This name is not available")
+        self.messages.append(f"Not connected to {name}\n\n")
+        return False
 
 
     def recv_msg(self, conn, msg):

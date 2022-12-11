@@ -58,17 +58,15 @@ class MainUi(customtkinter.CTk):
 
     def connect_handler(self):
         name = self.peer_chooser.get()
-        print(name)
         self.node.connect_auto(name)
 
 
     def send_handler(self):
         name = self.peer_chooser.get()
-        print(name)
         msg = self.input_message.get()
-        print(msg)
-        self.node.send_by_name(name, msg)
+        sent = self.node.send_by_name(name, msg)
         self.input_message.delete("0", "end")
         sent_report = f"[To {name}]  {msg}\n\n"
-        self.node.messages.append(sent_report)
+        if sent:
+            self.node.messages.append(sent_report)
 
