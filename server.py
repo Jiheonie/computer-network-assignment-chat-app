@@ -52,8 +52,8 @@ class Server:
                 elif recv_msg == "!exit":
                     connected = False
                     print(f'[{addr}] DISCONNECTED')
-                    self.conns.remove(conn)  
                     index = self.conns.index(conn)  
+                    self.conns.remove(conn)  
                     self.addrs.pop(index)
                     self.names.pop(index)
                     self.online_users = [self.addrs, self.names]

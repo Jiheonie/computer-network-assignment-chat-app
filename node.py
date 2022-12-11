@@ -152,14 +152,14 @@ class Node:
     def send_node_out(self, conn, msg):
         if msg == DISCONNECT_MSG:
             self.nodes_out.remove(conn)
-        print('hihi')
+        print('sent')
         conn.send(msg.encode(FORMAT))
 
 
     def send_node_in(self, conn, msg):
         if msg == DISCONNECT_MSG:
             self.nodes_in.remove(conn)
-        print("hihi")
+        print("sent")
         conn.send(msg.encode(FORMAT))
 
 
