@@ -32,7 +32,6 @@ class Node:
         self.messages = []
 
         self.working = True
-        self.lock = threading.Lock()
 
         self.server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.server_socket.bind((self.host, self.port))
@@ -80,7 +79,8 @@ class Node:
             # tach danh sach ra
             self.available_users = eval(recv_msg)  
         elif command == "!exit":
-            self.send_by_name("server", "!exit")
+            for name in self.all_names():
+                self.send_by_name(name, "!exit")
                         
 
     def listen(self):
@@ -129,7 +129,6 @@ class Node:
 
 
     def recv_node_out(self, conn):
-        self.lock.acquire()
         try: 
             name = self.find_name_by_conn(conn)
         except IndexError:
@@ -141,8 +140,6 @@ class Node:
             if recv_msg:
                 self.recv_msg(conn, recv_msg)
 
-        self.lock.release()
-
     
     def recv_by_name(self, name):
         conn = self.find_conn_by_name(name)
@@ -151,15 +148,13 @@ class Node:
 
     def send_node_out(self, conn, msg):
         if msg == DISCONNECT_MSG:
-            self.nodes_out.remove(conn)
-        print('sent')
+            self.remove_out(conn)
         conn.send(msg.encode(FORMAT))
 
 
     def send_node_in(self, conn, msg):
         if msg == DISCONNECT_MSG:
-            self.nodes_in.remove(conn)
-        print("sent")
+            self.remove_in(conn)
         conn.send(msg.encode(FORMAT))
 
 
@@ -172,6 +167,7 @@ class Node:
     
     def send_by_name(self, name, msg):
         if name in self.all_names():
+            print(len(self.all_nodes()))
             conn = self.find_conn_by_name(name)
             self.send(conn, msg)
             for msg in self.messages:
@@ -187,11 +183,13 @@ class Node:
     def recv_msg(self, conn, msg):
         match = re.search(NAME_PATTERN, msg)
         if match:
-            print("match")
             self.recv_name(conn, msg)
             print(f"Match: {self.all_names()}")
-        elif msg == DISCONNECT_MSG:
+        elif msg == "!exit":
+            name = self.find_name_by_conn(conn)
+            self.messages.append(f"{name} disconnected")
             self.disconnect(conn)
+            print(self.all_names())
         else:   
             self.display_msg(conn, msg) 
             print(self.messages)
@@ -204,7 +202,10 @@ class Node:
 
     def disconnect(self, conn):
         print(f'[{self.find_name_by_conn(conn)}] disconnected')
-        self.nodes_out.remove(conn)  
+        if conn in self.nodes_in:
+            self.remove_in(conn)
+        else:
+            self.remove_out(conn)
 
     
     def recv_name(self, conn, msg):
@@ -215,3 +216,15 @@ class Node:
             self.names_in.append(split_msg[1])
 
 
+    def remove_out(self, conn):
+        index = self.nodes_out.index(conn)
+        self.nodes_out.remove(conn)  
+        self.addrs_out.pop(index)
+        self.names_out.pop(index)
+
+
+    def remove_in(self, conn):
+        index = self.nodes_in.index(conn)
+        self.nodes_in.remove(conn)  
+        self.addrs_in.pop(index)
+        self.names_in.pop(index)
