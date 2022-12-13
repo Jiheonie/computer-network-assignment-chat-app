@@ -19,3 +19,4 @@ app.mainloop()
 
 peer.working = False
 peer.request_server("!exit")
+print("exited!")

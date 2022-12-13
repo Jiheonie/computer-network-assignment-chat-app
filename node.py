@@ -7,8 +7,10 @@ HEADER = 2048
 PORT = 5050
 SERVER = socket.gethostbyname(socket.gethostname())
 DISCONNECT_MSG = "!exit"
-FORMAT = "ascii"
+FORMAT = "utf-8"
 NAME_PATTERN = "\#NAME\:\s"
+FILENAME_PATTERN = "\#FILENAME\:\s"
+FILE_PATTERN = "\#FILE\:\s"
 
 
 class Node:
@@ -30,6 +32,8 @@ class Node:
         self.names_in = []
 
         self.messages = []
+
+        self.filename = []
 
         self.working = True
 
@@ -167,24 +171,32 @@ class Node:
     
     def send_by_name(self, name, msg):
         if name in self.all_names():
-            print(len(self.all_nodes()))
             conn = self.find_conn_by_name(name)
             self.send(conn, msg)
             for msg in self.messages:
-                if msg == f"Not connected to {name}\n\n":
+                if msg == f"Not connected to {name}\n\n" or msg == "Not connected to anyone\n\n":
                     self.messages.remove(msg)
             return True
 
         print("This name is not available")
-        self.messages.append(f"Not connected to {name}\n\n")
+        if name == "No one chosen":
+            self.messages.append("Not connected to anyone\n\n")
+        else:
+            self.messages.append(f"Not connected to {name}\n\n")
         return False
 
 
     def recv_msg(self, conn, msg):
-        match = re.search(NAME_PATTERN, msg)
-        if match:
+        name_match = re.search(NAME_PATTERN, msg)
+        filename_match = re.search(FILENAME_PATTERN, msg)
+        file_match = re.search(FILE_PATTERN, msg)
+        if name_match:
             self.recv_name(conn, msg)
-            print(f"Match: {self.all_names()}")
+            print(f"Connected: {self.all_names()}")
+        elif filename_match:
+            self.recv_filename(msg)
+        elif file_match:
+            self.recv_file(msg)
         elif msg == "!exit":
             name = self.find_name_by_conn(conn)
             self.messages.append(f"{name} disconnected")
@@ -214,6 +226,25 @@ class Node:
             self.names_out.append(split_msg[1])
         else:
             self.names_in.append(split_msg[1])
+
+
+    def recv_filename(self, msg):
+        split_msg = msg.split(": ")
+        file_name_recved = split_msg[1]
+        self.filename.append(f"#{file_name_recved}")
+        print(self.filename)
+
+    
+    def recv_file(self, msg):
+        split_msg = msg.split(": ")
+        changed_filename = split_msg[1]
+        if changed_filename in self.filename:
+            print("received")
+            data = split_msg[2]
+            filename = changed_filename[1:]
+            print(filename)
+            with open(f"test_{filename}", "wb") as f:
+                f.write(bytes(data))
 
 
     def remove_out(self, conn):
