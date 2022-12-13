@@ -72,7 +72,6 @@ class MainUi(customtkinter.CTk):
     def send_handler(self):
         name = self.peer_chooser.get()
         msg = self.input_message.get()
-        filepath = self.filepath
         filename = self.file_label.cget(attribute_name="text")
         if msg:
             msg_sent = self.node.send_by_name(name, msg)
@@ -81,18 +80,15 @@ class MainUi(customtkinter.CTk):
             if msg_sent:
                 self.node.messages.append(sent_report)
         if filename:
-            file_name_sent = self.node.send_by_name(name, f"#FILENAME: {filename}")
-            with open (filepath, "rb") as f:
-                data = f.read()
-            if file_name_sent:
-                file_sent = self.node.send_by_name(name, f"#FILE: #{filename}: {data}")
-                if file_sent:
-                    print("file sent")
+            self.node.filename = self.filepath
+            self.node.sending_file = True
+            self.node.send_by_name(name, "!file")
+            self.file_label.configure(text="No file chosen")
+            self.filepath = ""
 
 
     def browse_file(self):
         browsed_file = customtkinter.filedialog.askopenfilename()
-        print(type(browsed_file))
         file_name = browsed_file.split("/")[-1]
         if file_name:
             self.file_label.configure(text=file_name)
