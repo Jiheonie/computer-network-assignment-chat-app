@@ -1,4 +1,5 @@
 import customtkinter
+import threading
 
 class MainUi(customtkinter.CTk):
     def __init__(self, node):
@@ -82,7 +83,8 @@ class MainUi(customtkinter.CTk):
         if filename:
             self.node.filename = self.filepath
             self.node.sending_file = True
-            self.node.send_by_name(name, "!file")
+            send_thread = threading.Thread(target=self.node.send_by_name, args=(name, "!file"))
+            send_thread.start()
             self.file_label.configure(text="No file chosen")
             self.filepath = ""
 

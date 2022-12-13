@@ -45,7 +45,7 @@ class Node:
         self.server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.server_socket.bind((self.host, self.port))
         self.connect(SERVER, PORT)
-        time.sleep(1)
+        time.sleep(0.5)
         self.send_info()
 
 
@@ -105,7 +105,6 @@ class Node:
             self.send_node_in(conn, name_msg)
             recv_thread = threading.Thread(target=self.recv_node_in, args=(conn,))
             recv_thread.start()
-            recv_thread.join()
             self.sending_file = False
 
 
@@ -140,7 +139,7 @@ class Node:
             print(recved_msg)
             if recved_msg == "!file":
                 self.sending_file = True
-            else: 
+            elif recved_msg:
                 self.recv_msg(conn, recved_msg)
 
 
@@ -155,9 +154,9 @@ class Node:
             else:
                 recv_msg = conn.recv(HEADER).decode(FORMAT)
             print(recv_msg)
-            if recv_msg =="!file":
+            if recv_msg == "!file":
                 self.sending_file = True
-            else:
+            elif recv_msg:
                 self.recv_msg(conn, recv_msg)
 
     
@@ -209,15 +208,9 @@ class Node:
 
     def recv_msg(self, conn, msg):
         name_match = re.search(NAME_PATTERN, msg)
-        filename_match = re.search(FILENAME_PATTERN, msg)
-        file_match = re.search(FILE_PATTERN, msg)
         if name_match:
             self.recv_name(conn, msg)
             print(f"Connected: {self.all_names()}")
-        elif filename_match:
-            self.recv_filename(msg)
-        elif file_match:
-            self.recv_file(msg)
         elif msg == "!exit":
             name = self.find_name_by_conn(conn)
             self.messages.append(f"{name} disconnected")
@@ -268,17 +261,21 @@ class Node:
     def recv_file(self, conn):
         received = conn.recv(4096).decode()
         filename, filesize = received.split(SEPARATOR)
+        print(filesize)
         filename = os.path.basename(filename)
         filesize = int(filesize)
         print("File name sent")
 
         with open(filename, "wb") as f:
-            while True:
+            while self.sending_file:
                 bytes_read = conn.recv(4096)
                 if not bytes_read:
-                    break 
+                    self.sending_file = False
+                    print("done")
                 f.write(bytes_read)
                 print("This path written")
+
+        self.messages.append("File received")
 
 
     def remove_out(self, conn):
