@@ -1,5 +1,7 @@
 import customtkinter
 import threading
+import os.path
+import math
 
 class MainUi(customtkinter.CTk):
     def __init__(self, node):
@@ -60,14 +62,14 @@ class MainUi(customtkinter.CTk):
             if name != self.node.name:
                 self.peer_list.append(name)
         if self.peer_list == []:
-            self.peer_list = ["No online user"]
+            self.peer_list = ["No one chosen"]
         self.peer_chooser.configure(values=self.peer_list)
 
 
     def connect_handler(self):
         name = self.peer_chooser.get()
-        if name != "No one chosen":
-            self.node.connect_auto(name)
+        # if name != "No one chosen":
+        self.node.connect_auto(name)
 
 
     def send_handler(self):
@@ -80,11 +82,8 @@ class MainUi(customtkinter.CTk):
             sent_report = f"[To {name}]  {msg}\n\n"
             if msg_sent:
                 self.node.messages.append(sent_report)
-        if filename:
-            self.node.filename = self.filepath
-            self.node.sending_file = True
-            send_thread = threading.Thread(target=self.node.send_by_name, args=(name, "!file"))
-            send_thread.start()
+        if filename != "No file chosen":
+            self.node.send_file(name, self.filepath)
             self.file_label.configure(text="No file chosen")
             self.filepath = ""
 
