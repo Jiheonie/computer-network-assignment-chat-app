@@ -15,7 +15,6 @@ class MainUi(customtkinter.CTk):
         self.grid_rowconfigure(1, weight=1)
         self.grid_rowconfigure(2, weight=1)
         self.grid_columnconfigure((0, 1, 2), weight=1)
-        self.current_peer_name = customtkinter.StringVar()
 
 
         self.peer_chooser = customtkinter.CTkOptionMenu(master=self, corner_radius=0, values=self.peer_list, font=customtkinter.CTkFont(size=14))

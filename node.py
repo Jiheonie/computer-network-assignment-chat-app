@@ -37,8 +37,6 @@ class Node:
 
         self.messages = []
 
-        # self.filename = ""
-
         self.working = True
 
         self.sending_file = False
@@ -81,7 +79,7 @@ class Node:
             port = addr[1]
             self.connect(ip, port)
 
-            print(f"OK: {self.all_names()}")
+            print(f"Connected: {self.all_names()}")
             
 
     def request_server(self, command):
@@ -134,16 +132,7 @@ class Node:
             
     def recv_node_in(self, conn):
         while conn in self.nodes_in:
-            if self.sending_file == True:
-                name = self.find_name_by_conn(conn)
-                self.recv_file(name)
-            else:
-                msg = conn.recv(HEADER).decode(FORMAT)
-                print(msg)
-                if msg == "!file":
-                    self.sending_file = True
-                elif msg:
-                    self.recv_msg(conn, msg)
+            self.recv_file_or_msg(conn)
 
 
     def recv_node_out(self, conn):
@@ -152,21 +141,28 @@ class Node:
         except IndexError:
             name = ""
         while conn in self.nodes_out and name != "server": 
-            if self.sending_file == True:
-                name = self.find_name_by_conn(conn)
-                self.recv_file(name)
-            else:
-                msg = conn.recv(HEADER).decode(FORMAT)
-                print(msg)
-                if msg == "!file":
-                    self.sending_file = True
-                elif msg:
-                    self.recv_msg(conn, msg)
+            self.recv_file_or_msg(conn)
+
+    
+    def recv_file_or_msg(self, conn):
+        if self.sending_file == True:
+            name = self.find_name_by_conn(conn)
+            self.recv_file(name)
+        else:
+            msg = conn.recv(HEADER).decode(FORMAT)
+            print(msg)
+            if msg == "!file":
+                self.sending_file = True
+            elif msg:
+                self.recv_msg(conn, msg)
 
     
     def recv_by_name(self, name):
         conn = self.find_conn_by_name(name)
-        return conn.recv(HEADER).decode(FORMAT)
+        return conn.recv(HEADER).decode(FORMAT) 
+        # Error: doi luc khong the gui 2 chieu
+        # Mo ta: Sau khi 1 ben da gui file 
+            # thi ben con lai khong the gui file nguoc lai
 
 
     def send_node_out(self, conn, msg):
@@ -244,44 +240,42 @@ class Node:
     def send_file(self, name, filepath):
         self.send_by_name(name, "!file")
         filesize = os.path.getsize(filepath)
-        print(filesize)
         self.send_by_name(name, f"{filepath}{SEPARATOR}{filesize}")
-        self.file_send_step = math.ceil(float(filesize)/HEADER)
-        print(f"Root step: {self.file_send_step}")
+        print("Step 1 done")
 
         with open(filepath, "rb") as f:
             while True:
-                bytes_read = f.read(HEADER)
-                if not bytes_read:
+                try:
+                    bytes_read = f.read(HEADER)
+                    if not bytes_read:
+                        break
+                    conn = self.find_conn_by_name(name)
+                    conn.send(bytes_read)
+                except ValueError:
                     break
-                conn = self.find_conn_by_name(name)
-                conn.send(bytes_read)
         
-        self.messages.append("File sent\n\n")
+        self.messages.append("File sent.\n\n")
 
 
     def recv_file(self, name):
         init_msg = self.recv_by_name(name)
         filename, filesize = init_msg.split(SEPARATOR)
         filename = os.path.basename(filename)
-        print(filesize)
         self.file_send_step = math.ceil(float(filesize)/HEADER)
 
         with open(filename, "wb") as f:
             while self.sending_file:
                 conn = self.find_conn_by_name(name)
                 if self.file_send_step == 0:
-                    print("done")
                     self.sending_file = False
                     print(self.sending_file)
                     break
                 bytes_read = conn.recv(HEADER)
                 f.write(bytes_read)
-                print("This path written")
                 self.file_send_step -= 1
-                print(f"Step: {self.file_send_step}")
+                print(f"Steps remaining: {self.file_send_step}")
 
-        self.messages.append("File received\n\n")
+        self.messages.append(f"[{name}]  Sent you a file: [{filename}] \n\n")
 
 
     def remove_out(self, conn):
