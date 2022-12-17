@@ -8,7 +8,9 @@ my_ip = str(socket.gethostbyname(socket.gethostname()))
 my_port = int(sys.argv[1])
 my_name = str(sys.argv[2])
 
-peer = node.Node(my_ip, my_port, my_name)
+server_ip = str(input("Enter server IP: "))
+
+peer = node.Node(my_ip, my_port, my_name, server_ip)
 recv_thread = threading.Thread(target=peer.listen)
 recv_thread.start()
 

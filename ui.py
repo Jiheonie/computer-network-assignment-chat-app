@@ -1,7 +1,4 @@
 import customtkinter
-import threading
-import os.path
-import math
 
 class MainUi(customtkinter.CTk):
     def __init__(self, node):

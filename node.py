@@ -8,17 +8,14 @@ import math
 
 HEADER = 2048
 PORT = 5050
-SERVER = socket.gethostbyname(socket.gethostname())
 DISCONNECT_MSG = "!exit"
-FORMAT = "utf-8"
+FORMAT = "latin-1"
 NAME_PATTERN = "\#NAME\:\s"
-FILENAME_PATTERN = "\#FILENAME\:\s"
-FILE_PATTERN = "\#FILE\:\s"
 SEPARATOR = "<SEPARATOR>"
 
 
 class Node:
-    def __init__(self, host, port, name) -> None:
+    def __init__(self, host, port, name, server_ip) -> None:
         self.host = host
         self.port = port
         self.name = name
@@ -44,7 +41,7 @@ class Node:
 
         self.server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.server_socket.bind((self.host, self.port))
-        self.connect(SERVER, PORT)
+        self.connect(server_ip, PORT)
         time.sleep(0.5)
         self.send_info()
 
@@ -208,7 +205,7 @@ class Node:
             print(f"Connected: {self.all_names()}")
         elif msg == "!exit":
             name = self.find_name_by_conn(conn)
-            self.messages.append(f"{name} disconnected")
+            self.messages.append(f"{name} disconnected\n\n")
             self.disconnect(conn)
             print(self.all_names())
         else:   
@@ -242,6 +239,7 @@ class Node:
         filesize = os.path.getsize(filepath)
         self.send_by_name(name, f"{filepath}{SEPARATOR}{filesize}")
         print("Step 1 done")
+        time.sleep(0.5)
 
         with open(filepath, "rb") as f:
             while True:
@@ -258,8 +256,12 @@ class Node:
 
 
     def recv_file(self, name):
+        # init_msg = <filepath><seperator><filesize>
         init_msg = self.recv_by_name(name)
         filename, filesize = init_msg.split(SEPARATOR)
+        time.sleep(0.5)
+        print(filename)
+        print(filesize)
         filename = os.path.basename(filename)
         self.file_send_step = math.ceil(float(filesize)/HEADER)
 
@@ -268,7 +270,6 @@ class Node:
                 conn = self.find_conn_by_name(name)
                 if self.file_send_step == 0:
                     self.sending_file = False
-                    print(self.sending_file)
                     break
                 bytes_read = conn.recv(HEADER)
                 f.write(bytes_read)

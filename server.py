@@ -6,7 +6,7 @@ import re
 HEADER = 2048
 PORT = 5050
 SERVER = socket.gethostbyname(socket.gethostname())
-FORMAT = "utf-8"
+FORMAT = "latin-1"
 NAME_PATTERN = "\#NAME\:\s"
 ADDR_PATTERN = "\#ADDR\:\s"
 
