@@ -157,9 +157,6 @@ class Node:
     def recv_by_name(self, name):
         conn = self.find_conn_by_name(name)
         return conn.recv(HEADER).decode(FORMAT) 
-        # Error: doi luc khong the gui 2 chieu
-        # Mo ta: Sau khi 1 ben da gui file 
-            # thi ben con lai khong the gui file nguoc lai
 
 
     def send_node_out(self, conn, msg):
@@ -235,24 +232,27 @@ class Node:
 
 
     def send_file(self, name, filepath):
-        self.send_by_name(name, "!file")
-        filesize = os.path.getsize(filepath)
-        self.send_by_name(name, f"{filepath}{SEPARATOR}{filesize}")
-        print("Step 1 done")
-        time.sleep(0.5)
+        if name != "No one chosen":
+            self.send_by_name(name, "!file")
+            filesize = os.path.getsize(filepath)
+            self.send_by_name(name, f"{filepath}{SEPARATOR}{filesize}")
+            time.sleep(0.5)
 
-        with open(filepath, "rb") as f:
-            while True:
-                try:
-                    bytes_read = f.read(HEADER)
-                    if not bytes_read:
+            with open(filepath, "rb") as f:
+                while True:
+                    try:
+                        bytes_read = f.read(HEADER)
+                        if not bytes_read:
+                            break
+                        conn = self.find_conn_by_name(name)
+                        conn.send(bytes_read)
+                    except ValueError:
                         break
-                    conn = self.find_conn_by_name(name)
-                    conn.send(bytes_read)
-                except ValueError:
-                    break
+            
+            self.messages.append("File sent.\n\n")
         
-        self.messages.append("File sent.\n\n")
+        else: 
+            self.messages.append("Not connected to anyone\n\n")
 
 
     def recv_file(self, name):
@@ -260,8 +260,6 @@ class Node:
         init_msg = self.recv_by_name(name)
         filename, filesize = init_msg.split(SEPARATOR)
         time.sleep(0.5)
-        print(filename)
-        print(filesize)
         filename = os.path.basename(filename)
         self.file_send_step = math.ceil(float(filesize)/HEADER)
 
