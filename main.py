@@ -12,7 +12,8 @@ my_name = str(sys.argv[2])
 
 
 # NOTE: ask the admin who is running server for the server ip address
-server_ip = str(input("Enter server IP: "))
+# server_ip = str(input("Enter server IP: "))
+server_ip = '127.0.0.1'
 
 peer = node.Node(my_ip, my_port, my_name, server_ip)
 recv_thread = threading.Thread(target=peer.listen)
